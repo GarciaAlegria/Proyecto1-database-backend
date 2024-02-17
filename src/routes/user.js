@@ -24,4 +24,12 @@ router.get("/users/find", (req, res) => {
     .catch((error) => res.json({ message: error }));
 });
 
+router.put("/users/update", (req, res) => {
+  const { email, name } = req.body;
+  userSchema
+    .updateOne({ email: email }, { name: name })
+    .then((data) => res.json(data))
+    .catch((error) => res.json({ message: error }));
+});
+
 module.exports = router;
