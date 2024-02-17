@@ -4,6 +4,7 @@ require("dotenv").config();
 const port = process.env.PORT || 3000;
 const mongoose = require("mongoose");
 const userRoutes = require("./src/routes/user.js");
+const hospitalRoutes = require("./src/routes/hospital.js");
 
 //Routes
 app.get("/", (req, res) => {
@@ -12,6 +13,7 @@ app.get("/", (req, res) => {
 
 app.use(express.json());
 app.use("/api", userRoutes);
+app.use("/api", hospitalRoutes);
 
 // Mongodb connection
 mongoose
