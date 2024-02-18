@@ -4,8 +4,8 @@ require("dotenv").config();
 const port = process.env.PORT || 3000;
 const mongoose = require("mongoose");
 const userRoutes = require("./src/routes/user.js");
-const hospitalRoutes = require("./src/routes/hospital.js");
-const examenRoutes = require("./src/routes/examen.js");
+const teamRoutes = require("./src/routes/team.js");
+const playerRoutes = require("./src/routes/player.js");
 
 //Routes
 app.get("/", (req, res) => {
@@ -14,8 +14,8 @@ app.get("/", (req, res) => {
 
 app.use(express.json());
 app.use("/api", userRoutes);
-app.use("/api", hospitalRoutes);
-app.use("/api", examenRoutes);
+app.use("/api", teamRoutes);
+app.use("/api", playerRoutes);
 
 // Mongodb connection
 mongoose

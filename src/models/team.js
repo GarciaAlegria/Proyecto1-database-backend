@@ -1,39 +1,43 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const hospitalSchema = new mongoose.Schema(
+const teamSchema = new mongoose.Schema(
   {
-    nombre: {
+    name: {
       type: String,
       required: true,
     },
-    direccion: {
+    abbreviation: {
       type: String,
       required: true,
     },
-    descripcion: {
+    conference: {
       type: String,
       required: true,
     },
-    zona: {
+    division: {
+      type: String,
+      required: true,
+    },
+    city: {
+      type: String,
+      required: true,
+    },
+    arena: {
+      type: String,
+      required: true,
+    },
+
+    founded: {
       type: Number,
       required: true,
     },
-    estado: {
+    logo: {
       type: String,
       required: true,
-    },
-    image_url: {
-      type: String,
-      required: true,
-    },
-    user_id: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      require: true,
     },
   },
-  { collection: "hospitales" },
+  { collection: "equipos" },
 );
 
-module.exports = mongoose.model("Hospital", hospitalSchema);
+module.exports = mongoose.model("Team", teamSchema);
