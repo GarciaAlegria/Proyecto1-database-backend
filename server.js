@@ -7,9 +7,9 @@ const mongoose = require("mongoose");
 const userRoutes = require("./src/routes/user.js");
 const teamRoutes = require("./src/routes/team.js");
 const playerRoutes = require("./src/routes/player.js");
+const gameRoutes = require("./src/routes/game.js");
 
-
-app.use(cors({ origin: 'http://localhost:3001' }));
+app.use(cors({ origin: "http://localhost:3001" }));
 
 //Routes
 app.get("/", (req, res) => {
@@ -20,6 +20,7 @@ app.use(express.json());
 app.use("/api", userRoutes);
 app.use("/api", teamRoutes);
 app.use("/api", playerRoutes);
+app.use("/api", gameRoutes);
 
 // Mongodb connection
 mongoose

@@ -3,28 +3,36 @@ const Schema = mongoose.Schema;
 
 const playerSchema = new mongoose.Schema(
   {
-    first_name: {
-      type: String,
-      required: true,
-    },
-    last_name: {
-      type: String,
-      required: true,
+    name: {
+      first_name: {
+        type: String,
+        required: true,
+      },
+      last_name: {
+        type: String,
+        required: true,
+      },
     },
     position: {
       type: String,
       required: true,
     },
-    heigh_feet: {
-      type: Number,
-      required: true,
-    },
-    heigh_inches: {
-      type: Number,
-      required: true,
+    height: {
+      height_feet: {
+        type: Number,
+        required: true,
+      },
+      height_inches: {
+        type: Number,
+        required: true,
+      },
     },
     weight_pounds: {
       type: Number,
+      required: true,
+    },
+    stats: {
+      type: Array,
       required: true,
     },
     team_id: {
