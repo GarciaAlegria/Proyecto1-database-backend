@@ -3,7 +3,7 @@ const teamSchema = require("../models/team");
 
 const router = express.Router();
 
-// consultar usuario
+// consultar equipo
 router.get("/teams", (req, res) => {
   teamSchema
     .find()
@@ -27,28 +27,29 @@ router.get("/teams/find", (req, res) => {
     .catch((error) => res.json({ message: error }));
 });
 
-router.put("/teams/update", (req, res) => {
-  const { nombre, direccion } = req.body;
+router.put("/teams/update/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, abbreviation, conference, division, city, arena, founded, logo } = req.body;
   teamSchema
-    .updateOne({ nombre: nombre }, { direccion: direccion })
+    .updateOne({_id: id }, { $set: { name, abbreviation, conference, division, city, arena, founded, logo }})
     .then((data) => res.json(data))
     .catch((error) => res.json({ message: error }));
 });
 
-// Ruta para eliminar un equipo por su nombre
-router.delete("/teams/delete/:name", async (req, res) => {
-  try {
-    const { name } = req.params;
-    const deletedTeam = await teamSchema.findOneAndDelete({ name: name });
-    if (!deletedTeam) {
-      return res.status(404).json({ message: "Equipo no encontrado" });
-    }
-    res.json({ message: "Equipo eliminado correctamente", deletedTeam });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
 
+router.delete("/teams/deleteByName/:name", (req, res) => {
+  const { name } = req.params;
+  teamSchema
+    .findOneAndRemove({ name: name })
+    .then((data) => {
+      if (data) {
+        res.json({ message: "Equipo eliminado correctamente" });
+      } else {
+        res.json({ message: "No se encontró el equipo con ese nombre" });
+      }
+    })
+    .catch((error) => res.json({ message: error }));
+});
 
 
 module.exports = router;
