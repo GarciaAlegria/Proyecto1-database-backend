@@ -2,14 +2,14 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 const mongoose = require("mongoose");
 const userRoutes = require("./src/routes/user.js");
 const teamRoutes = require("./src/routes/team.js");
 const playerRoutes = require("./src/routes/player.js");
 const gameRoutes = require("./src/routes/game.js");
 
-app.use(cors({ origin: "http://localhost:3001" }));
+app.use(cors({ origin: "http://localhost:3000" }));
 
 //Routes
 app.get("/", (req, res) => {
