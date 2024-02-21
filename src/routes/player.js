@@ -8,6 +8,7 @@ const router = express.Router();
 router.get("/players/find", (req, res) => {
   playerSchema
     .find()
+    .limit(20)
     .then((data) => res.json(data))
     .catch((error) => res.json({ message: error }));
 });
