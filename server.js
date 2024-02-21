@@ -9,7 +9,7 @@ const teamRoutes = require("./src/routes/team.js");
 const playerRoutes = require("./src/routes/player.js");
 const gameRoutes = require("./src/routes/game.js");
 
-app.use(cors({ origin: "http://localhost:3000" }));
+app.use(cors());
 
 //Routes
 app.get("/", (req, res) => {
