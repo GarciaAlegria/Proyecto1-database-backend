@@ -12,6 +12,13 @@ router.get("/players/find", (req, res) => {
     .catch((error) => res.json({ message: error }));
 });
 
+router.post("/players/find_specific", (req, res) => {
+  playerSchema
+    .find({ "name.first_name": req.body.name })
+    .then((data) => res.json(data))
+    .catch((error) => res.json({ message: error }));
+});
+
 router.post("/players/create", async (req, res) => {
   const teamPlayer = await teamSchema.findOne({
     name: req.body.team,
@@ -56,17 +63,28 @@ router.post("/players/delete", (req, res) => {
 });
 
 router.put("/players/update", async (req, res) => {
-  const teamPlayer = await teamSchema.findOne({ name: req.body.team });
-  if (!teamPlayer) {
-    return res.status(400).send("Equipo no encontrado");
+  let playerData = req.body;
+  let beforeName = req.body.beforeName;
+
+  if (req.body.newTeam !== "") {
+    const teamPlayer = await teamSchema.findOne({ name: req.body.newTeam });
+    if (!teamPlayer) {
+      return res.status(400).send("Equipo no encontrado");
+    }
+
+    const { team, beforeName, ...restBody } = req.body;
+
+    playerData = {
+      ...restBody,
+      team: teamPlayer._id,
+    };
+  } else {
+    const { beforeName, ...restBody } = req.body;
+
+    playerData = {
+      ...restBody,
+    };
   }
-
-  const { team, beforeName, ...restBody } = req.body;
-
-  const playerData = {
-    ...restBody,
-    team: teamPlayer._id,
-  };
 
   const updateObject = {};
   // Update specific fields if needed
