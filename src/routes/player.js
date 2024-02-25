@@ -5,11 +5,41 @@ const teamSchema = require("../models/team");
 
 const router = express.Router();
 
-router.get("/players/find", (req, res) => {
-  playerSchema
-    .find()
-    .then((data) => res.json(data))
-    .catch((error) => res.json({ message: error }));
+router.get("/players/find", async (req, res) => {
+  try {
+    const players = await playerSchema.aggregate([
+      {
+        $lookup: {
+          from: "equipos", // Collection name of the teams
+          localField: "team_id",
+          foreignField: "_id",
+          as: "team",
+        },
+      },
+      {
+        $unwind: "$team",
+      },
+      {
+        $project: {
+          name: "$name",
+          height: "$height",
+          position: "$position",
+          weight_pounds: "$weight_pounds",
+          stats: "$stats",
+          team_name: "$team.name",
+          averagePoints: { $arrayElemAt: ["$stats", 18] },
+        },
+      },
+      {
+        $sort: { "averagePoints": -1 },
+      },
+    ]);
+
+    res.json(players);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching players" });
+  }
 });
 
 router.post("/players/find_specific", (req, res) => {
@@ -104,6 +134,60 @@ router.put("/players/update", async (req, res) => {
     )
     .then(() => res.json({ message: "Player actualizado exitosamente" }))
     .catch((error) => res.json({ message: error }));
+});
+
+/* PLAYER STATS */
+
+router.get("/players/find/averagePoints", async (req, res) => {
+  try {
+    const players = await playerSchema.aggregate([
+      {
+        $project: {
+          gamesPlayed: { $arrayElemAt: ["$stats", 0] },
+          fieldGoalsMade: { $arrayElemAt: ["$stats", 4] },
+          fieldGoalsAttempted: { $arrayElemAt: ["$stats", 5] },
+          freethrowsPerGame: { $arrayElemAt: ["$stats", 8] },
+          reboundsPerGame: { $arrayElemAt: ["$stats", 12] },
+          assistsPerGame: { $arrayElemAt: ["$stats", 13] },
+          personalFouls: { $arrayElemAt: ["$stats", 13] },
+          stealsPerGame: { $arrayElemAt: ["$stats", 14] },
+          blocksPerGame: { $arrayElemAt: ["$stats", 15] },
+          turnoversPerGame: { $arrayElemAt: ["$stats", 16] },
+          pointsAverage: { $arrayElemAt: ["$stats", 18] },
+          fieldGoalPct: { $arrayElemAt: ["$stats", 19] },
+          fieldGoal3Pct: { $arrayElemAt: ["$stats", 20] },
+          freeThrowPct: { $arrayElemAt: ["$stats", 21] },
+        },
+      },
+      {
+        $match: { gamesPlayed: { $gt: 0 } },
+      },
+      {
+        $group: {
+          _id: null,
+          averageGamesPlayed: { $avg: "$gamesPlayed" },
+          averageFGM: { $avg: "$fieldGoalsMade" },
+          averageFGA: { $avg: "$fieldGoalsAttempted" },
+          averageFT: { $avg: "$freethrowsPerGame" },
+          averageRebound: { $avg: "$reboundsPerGame" },
+          averageAssist: { $avg: "$assistsPerGame" },
+          averagePF: { $avg: "$personalFouls" },
+          averageSteals: { $avg: "$stealsPerGame" },
+          averageBlocks: { $avg: "$blocksPerGame" },
+          averageTurnovers: { $avg: "$turnoversPerGame" },
+          averagePoints: { $avg: "$pointsAverage" },
+          averageFGP: { $avg: "$fieldGoalPct" },
+          averageFG3P: { $avg: "$fieldGoal3Pct" },
+          averageFTP: { $avg: "$freeThrowPct" },
+        },
+      },
+    ]);
+
+    res.json(players);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching players" });
+  }
 });
 
 module.exports = router;
