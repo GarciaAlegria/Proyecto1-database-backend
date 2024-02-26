@@ -5,7 +5,7 @@ const teamSchema = require("../models/team");
 
 const router = express.Router();
 
-router.get("/players/find", async (req, res) => {
+router.post("/players/find", async (req, res) => {
   try {
     const players = await playerSchema.aggregate([
       {
@@ -31,7 +31,7 @@ router.get("/players/find", async (req, res) => {
         },
       },
       {
-        $sort: { "averagePoints": -1 },
+        $sort: { [req.body.sort]: req.body.num },
       },
     ]);
 
@@ -59,12 +59,12 @@ router.post("/players/create", async (req, res) => {
 
   const newStats = req.body.stats.split(",").map(Number);
 
-  const { stats, team, ...restBody } = req.body;
+  const { stats, team, newTeam, ...restBody } = req.body;
 
   const playerData = {
     ...restBody,
     stats: newStats,
-    team: teamPlayer._id,
+    team_id: teamPlayer._id,
   };
 
   const player = new playerSchema(playerData);
