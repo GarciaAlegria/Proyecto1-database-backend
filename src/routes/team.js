@@ -11,12 +11,20 @@ router.get("/teams", (req, res) => {
     .catch((error) => res.json({ message: error }));
 });
 
-router.post("/teams/create", (req, res) => {
-  const team = new teamSchema(req.body);
-  team
-    .save()
-    .then((data) => res.json(data))
-    .catch((error) => res.json({ message: error }));
+router.post("/teams/create", async (req, res) => {
+  try {
+    const teamsCount = await teamSchema.countDocuments();
+    if (teamsCount >= 35) {
+      return res.status(400).json({ message: "Se ha alcanzado el límite máximo de equipos" });
+    }
+
+    const team = new teamSchema(req.body);
+    const savedTeam = await team.save();
+    res.json(savedTeam);
+  } catch (error) {
+    console.error("Error al añadir equipo:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
 });
 
 router.get("/teams/find", (req, res) => {
