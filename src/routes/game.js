@@ -4,7 +4,8 @@ const gameSchema = require("../models/game");
 
 const router = express.Router();
 
-router.get("/games/find", (req, res) => {
+router.get("/games/find/:skip", (req, res) => {
+  const { skip } = req.params;
   gameSchema.aggregate([
       {
         $lookup: {
@@ -40,6 +41,8 @@ router.get("/games/find", (req, res) => {
         }
       },
     ]) 
+    .skip(parseInt(skip))
+    .limit(15)
     .then((data) => res.json(data))
     .catch((error) => res.json({ message: error }));
 });
