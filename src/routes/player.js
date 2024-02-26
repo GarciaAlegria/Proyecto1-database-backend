@@ -42,11 +42,42 @@ router.post("/players/find", async (req, res) => {
   }
 });
 
-router.post("/players/find_specific", (req, res) => {
-  playerSchema
-    .find({ "name.first_name": req.body.name })
-    .then((data) => res.json(data))
-    .catch((error) => res.json({ message: error }));
+router.post("/players/find_specific", async (req, res) => {
+    try {
+      const players = await playerSchema.aggregate([
+        {
+          $lookup: {
+            from: "equipos", // Collection name of the teams
+            localField: "team_id",
+            foreignField: "_id",
+            as: "team",
+          },
+        },
+        {
+          $unwind: "$team",
+        },
+        {
+          $project: {
+            name: "$name",
+            height: "$height",
+            position: "$position",
+            weight_pounds: "$weight_pounds",
+            stats: "$stats",
+            team_name: "$team.name",
+            averagePoints: { $arrayElemAt: ["$stats", 18] },
+          },
+        },
+
+        {
+          $match: { "name.first_name": req.body.name },
+        },
+      ]);
+  
+      res.json(players);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error fetching players" });
+    }
 });
 
 router.post("/players/create", async (req, res) => {
