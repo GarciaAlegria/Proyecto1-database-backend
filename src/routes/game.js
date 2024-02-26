@@ -4,8 +4,8 @@ const gameSchema = require("../models/game");
 
 const router = express.Router();
 
-router.get("/games/find/:skip", (req, res) => {
-  const { skip } = req.params;
+router.get("/games/find/:skip/:field/:order", (req, res) => {
+  const { skip, field, order } = req.params;
   gameSchema.aggregate([
       {
         $lookup: {
@@ -25,7 +25,6 @@ router.get("/games/find/:skip", (req, res) => {
       },
       { $unwind: "$home" },
       { $unwind: "$visitor" },
-      { $sort: {date: -1} },
       {
         $project: {
           _id: "$_id",
@@ -41,6 +40,7 @@ router.get("/games/find/:skip", (req, res) => {
         }
       },
     ]) 
+    .sort({[field]: parseInt(order)})
     .skip(parseInt(skip))
     .limit(15)
     .then((data) => res.json(data))
@@ -52,6 +52,11 @@ router.post("/games/create", async (req, res) => {
 
   const home = await teamSchema.findOne({name: home_name});
   const visitor = await teamSchema.findOne({name: visitor_name});
+
+  if (gameSchema.countDocuments() + 1 > 50205) {
+    res.json({message: "No se pueden agregar mas documentos."})
+    return;
+  }
 
   if(home && visitor) {
     const game = new gameSchema({
@@ -74,6 +79,8 @@ router.post("/games/create", async (req, res) => {
       .save()
       .then((data) => res.json(data))
       .catch((error) => res.json({ message: error }));
+  } else {
+    res.json({message: "El nombre del equipo local o visitante no existe."})
   }
 });
 
