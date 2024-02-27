@@ -47,6 +47,100 @@ router.get("/games/find/:skip/:field/:order", (req, res) => {
     .catch((error) => res.json({ message: error }));
 });
 
+router.get("/games/stats/:stats", (req, res) => {
+  const { stats } = req.params;
+  if (stats === "wins") {
+    gameSchema.aggregate([
+      {
+        $project: {
+          winner: {
+            $cond: {
+              if: { $gt: ["$home_team.score", "$visitor_team.score"] },
+              then: "$home.team_id",
+              else: {
+                $cond: {
+                  if: { $lt: ["$home_team.score", "$visitor_team.score"] },
+                  then: "$visitor_team.team_id",
+                  else: null
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$winner",
+          wins: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: "equipos",
+          localField: "_id",
+          foreignField: "_id",
+          as: "team"
+        }
+      },
+      { $unwind: "$team" },
+      {
+        $project: {
+          team_name: "$team.name",
+          wins: 1
+        }
+      }
+    ])
+    .sort({wins: -1})
+    .then((data) => res.json(data))
+    .catch((error) => res.json({ message: error }));
+  }
+  if (stats === "loses") {
+    gameSchema.aggregate([
+      {
+        $project: {
+          loser: {
+            $cond: {
+              if: { $lt: ["$home_team.score", "$visitor_team.score"] },
+              then: "$home.team_id",
+              else: {
+                $cond: {
+                  if: { $gt: ["$home_team.score", "$visitor_team.score"] },
+                  then: "$visitor_team.team_id",
+                  else: null
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$loser",
+          loses: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: "equipos",
+          localField: "_id",
+          foreignField: "_id",
+          as: "team"
+        }
+      },
+      { $unwind: "$team" },
+      {
+        $project: {
+          team_name: "$team.name",
+          loses: 1
+        }
+      }
+    ])
+    .sort({loses: -1})
+    .then((data) => res.json(data))
+    .catch((error) => res.json({ message: error }));
+  }
+});
+
 router.post("/games/create", async (req, res) => {
   const { date, season, period, status, postseason, home_name, home_score, visitor_name, visitor_score } = req.body;
 
