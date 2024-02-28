@@ -43,49 +43,54 @@ router.post("/players/find", async (req, res) => {
 });
 
 router.post("/players/find_specific", async (req, res) => {
-    try {
-      const players = await playerSchema.aggregate([
-        {
-          $lookup: {
-            from: "equipos", // Collection name of the teams
-            localField: "team_id",
-            foreignField: "_id",
-            as: "team",
-          },
+  try {
+    const players = await playerSchema.aggregate([
+      {
+        $lookup: {
+          from: "equipos", // Collection name of the teams
+          localField: "team_id",
+          foreignField: "_id",
+          as: "team",
         },
-        {
-          $unwind: "$team",
+      },
+      {
+        $unwind: "$team",
+      },
+      {
+        $project: {
+          name: "$name",
+          height: "$height",
+          position: "$position",
+          weight_pounds: "$weight_pounds",
+          stats: "$stats",
+          team_name: "$team.name",
+          averagePoints: { $arrayElemAt: ["$stats", 18] },
         },
-        {
-          $project: {
-            name: "$name",
-            height: "$height",
-            position: "$position",
-            weight_pounds: "$weight_pounds",
-            stats: "$stats",
-            team_name: "$team.name",
-            averagePoints: { $arrayElemAt: ["$stats", 18] },
-          },
-        },
+      },
+      {
+        $match: { "name.first_name": req.body.name },
+      },
+    ]);
 
-        {
-          $match: { "name.first_name": req.body.name },
-        },
-      ]);
-  
-      res.json(players);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Error fetching players" });
-    }
+    res.json(players);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching players" });
+  }
 });
 
 router.post("/players/create", async (req, res) => {
+  const countDocs = await playerSchema.countDocuments();
+
+  if (countDocs >= 400) {
+    return res.status(400).json({ message: "Player's limit reached" });
+  }
+
   const teamPlayer = await teamSchema.findOne({
     name: req.body.team,
   });
   if (!teamPlayer) {
-    return res.status(400).send("Equipo no encontrado");
+    return res.json({ message: "No team found with the given name" });
   }
 
   const newStats = req.body.stats.split(",").map(Number);
@@ -218,6 +223,48 @@ router.get("/players/find/averagePoints", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching players" });
+  }
+});
+
+router.get("/players/find/mvpRace", async (req, res) => {
+  try {
+    const players = await playerSchema.aggregate([
+      {
+        $project: {
+          name: "$name",
+          gamesPlayed: { $arrayElemAt: ["$stats", 0] },
+          fieldGoalsMade: { $arrayElemAt: ["$stats", 4] },
+          fieldGoalsAttempted: { $arrayElemAt: ["$stats", 5] },
+          freethrowsPerGame: { $arrayElemAt: ["$stats", 8] },
+          reboundsPerGame: { $arrayElemAt: ["$stats", 12] },
+          assistsPerGame: { $arrayElemAt: ["$stats", 13] },
+          personalFouls: { $arrayElemAt: ["$stats", 13] },
+          stealsPerGame: { $arrayElemAt: ["$stats", 14] },
+          blocksPerGame: { $arrayElemAt: ["$stats", 15] },
+          turnoversPerGame: { $arrayElemAt: ["$stats", 16] },
+          pointsAverage: { $arrayElemAt: ["$stats", 18] },
+          fieldGoalPct: { $arrayElemAt: ["$stats", 19] },
+          fieldGoal3Pct: { $arrayElemAt: ["$stats", 20] },
+          freeThrowPct: { $arrayElemAt: ["$stats", 21] },
+        },
+      },
+      {
+        $match: { gamesPlayed: { $gt: 10 } },
+      },
+      {
+        $project: {
+            name: "$name",
+            mvpScore: { $add: ["$gamesPlayed", "$fieldGoalsMade", "$fieldGoalsAttempted", "$freethrowsPerGame", "$reboundsPerGame", "$assistsPerGame", "$stealsPerGame", "$blocksPerGame", "$turnoversPerGame", "$pointsAverage"] },
+        }
+        },
+      {$sort: {mvpScore: -1}},
+      {$limit: 10},
+    ]);
+
+    res.json(players);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching data" });
   }
 });
 
