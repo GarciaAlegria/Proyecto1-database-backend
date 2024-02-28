@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const playerSchema = require("../models/player");
 const teamSchema = require("../models/team");
+const player = require("../models/player");
 
 const router = express.Router();
 
@@ -266,6 +267,51 @@ router.get("/players/find/mvpRace", async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Error fetching data" });
   }
+});
+
+router.post("/players/bulkwrite", async (req, res) => {
+
+  console.log(req.body)
+  
+  const teamPlayer = await teamSchema.findOne({ name: req.body.newTeam });
+  if (!teamPlayer) {
+    return res.status(400).send("Equipo no encontrado");
+  }
+
+  console.log(teamPlayer.name)
+
+  const countDocs = await playerSchema.countDocuments();
+
+  console.log(countDocs)
+  
+  await playerSchema.collection.bulkWrite([
+      {
+      deleteOne: {
+        filter: { "stats": { "$elemMatch": { "$eq": 0 } } }}
+      },
+      {
+        insertOne: {
+          document: {
+            name: {
+              first_name: req.body.first_name,
+              last_name: req.body.last_name
+            },
+            position: "G",
+            height: {
+              height_feet: 5,
+              height_inches: 11
+            },
+            weight_pounds: 190,
+            stats: [30.978, 6.178, 3.511, 2.978, 19.044, 11.556, 11.222, 7.422, 1.711, 0.444, 11.622, 2.622, 9, 1.289, 1.111, 0.607, 0.26, 0.661, 35, 45, 15, 2023],
+            team_id: teamPlayer._id,
+          }
+        }
+      },
+      { updateOne: { filter: { "stats": { "$elemMatch": { "$eq": 0 } }}, update: { $set: { stats: [30.978, 6.178, 3.511, 2.978, 19.044, 11.556, 11.222, 7.422, 1.711, 0.444, 11.622, 2.622, 9, 1.289, 1.111, 0.607, 0.26, 0.661, 39, 45, 15, 2023] } } } },
+      { updateOne: { filter: { "weight_pounds": { "$gt": 190 }}, update: { $inc: { weight_pounds: 25 } } } },
+    ])
+  .then((data) => res.json(data))
+  .catch((error) => res.json({ message: error }));
 });
 
 module.exports = router;
