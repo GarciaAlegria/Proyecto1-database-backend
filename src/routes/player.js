@@ -269,47 +269,44 @@ router.get("/players/find/mvpRace", async (req, res) => {
   }
 });
 
-router.post("/players/bulkwrite", async (req, res) => {
+router.put("/players/addStat", async (req, res) => {
 
-  console.log(req.body)
-  
-  const teamPlayer = await teamSchema.findOne({ name: req.body.newTeam });
-  if (!teamPlayer) {
-    return res.status(400).send("Equipo no encontrado");
+  const { name, num } = req.body;
+
+  const player = await playerSchema.updateOne({ name: name },
+    { $push: { stats: Number(num)} });
+  if (!player) {
+    return res.status(400).send("Jugador no encontrado");
   }
+});
 
-  console.log(teamPlayer.name)
+router.put("/players/deleteStat", async (req, res) => {
+  const player = await playerSchema.updateOne({ name: req.body.name },
+    { $pop: { stats: -1 } });
+  if (!player) {
+    return res.status(400).send("Jugador no encontrado");
+  }
+});
+
+router.post("/players/addPlayers", async (req, res) => {
+
+  const updatedPlayers = await Promise.all(req.body.map(async (player, index) => {
+    const teamPlayer = await teamSchema.findOne({ name: player.team_id });
+    return {
+      insertOne: {
+        document: {
+          ...player,
+          team_id: teamPlayer._id, // assuming the team object has an _id property
+        },
+      },
+    };
+  }));
 
   const countDocs = await playerSchema.countDocuments();
 
   console.log(countDocs)
   
-  await playerSchema.collection.bulkWrite([
-      {
-      deleteOne: {
-        filter: { "stats": { "$elemMatch": { "$eq": 0 } } }}
-      },
-      {
-        insertOne: {
-          document: {
-            name: {
-              first_name: req.body.first_name,
-              last_name: req.body.last_name
-            },
-            position: "G",
-            height: {
-              height_feet: 5,
-              height_inches: 11
-            },
-            weight_pounds: 190,
-            stats: [30.978, 6.178, 3.511, 2.978, 19.044, 11.556, 11.222, 7.422, 1.711, 0.444, 11.622, 2.622, 9, 1.289, 1.111, 0.607, 0.26, 0.661, 35, 45, 15, 2023],
-            team_id: teamPlayer._id,
-          }
-        }
-      },
-      { updateOne: { filter: { "stats": { "$elemMatch": { "$eq": 0 } }}, update: { $set: { stats: [30.978, 6.178, 3.511, 2.978, 19.044, 11.556, 11.222, 7.422, 1.711, 0.444, 11.622, 2.622, 9, 1.289, 1.111, 0.607, 0.26, 0.661, 39, 45, 15, 2023] } } } },
-      { updateOne: { filter: { "weight_pounds": { "$gt": 190 }}, update: { $inc: { weight_pounds: 25 } } } },
-    ])
+  await playerSchema.collection.bulkWrite(updatedPlayers)
   .then((data) => res.json(data))
   .catch((error) => res.json({ message: error }));
 });
