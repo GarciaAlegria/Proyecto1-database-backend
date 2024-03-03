@@ -134,22 +134,41 @@ router.put("/players/update", async (req, res) => {
   let beforeName = req.body.beforeName;
 
   if (req.body.newTeam !== "") {
+
     const teamPlayer = await teamSchema.findOne({ name: req.body.newTeam });
     if (!teamPlayer) {
       return res.status(400).send("Equipo no encontrado");
     }
 
-    const { team, beforeName, ...restBody } = req.body;
+    let newStats = req.body.stats;
+    try {
+      newStats = req.body.stats.split(",").map(Number);
+    } catch (error) {
+      newStats = req.body.stats;
+    }
+
+    const { team, stats, beforeName, ...restBody } = req.body;
 
     playerData = {
       ...restBody,
+      stats: newStats,
       team: teamPlayer._id,
     };
   } else {
-    const { beforeName, ...restBody } = req.body;
+
+    const { beforeName, stats, ...restBody } = req.body;
+
+    let newStats = req.body.stats;
+    try {
+      newStats = req.body.stats.split(",").map(Number);
+    } catch (error) {
+      newStats = req.body.stats;
+    }
 
     playerData = {
       ...restBody,
+      stats: newStats,
+      team_id: req.body.team_id,
     };
   }
 
